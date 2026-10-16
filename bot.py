@@ -22,7 +22,7 @@ async def handle(request):
     return web.Response(text="Bot is running!")
 
 async def main():
-    # بدء تشغيل خادم الويب
+    # تشغيل سيرفر الويب الخاص بمنصة Render
     server = web.Application()
     server.add_routes([web.get("/", handle)])
     runner = web.AppRunner(server)
@@ -31,11 +31,10 @@ async def main():
     site = web.TCPSite(runner, "0.0.0.0", port)
     await site.start()
     
-    # بدء تشغيل بوت تيليجرام
+    # تشغيل بوت تيليجرام
     await app.start()
     print("البوت يعمل الآن بنجاح مع سيرفر الويب!")
     
-    # إبقاء التشغيل مستمراً
     while True:
         await asyncio.sleep(3600)
 
