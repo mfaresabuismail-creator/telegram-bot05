@@ -1,16 +1,24 @@
 import os
+import asyncio
 from pyrogram import Client, filters
 from pyrogram.types import Message
 from aiohttp import web
 
-# جلب البيانات من المتغيرات البيئية
 API_ID = int(os.environ.get("API_ID", "1234567"))
 API_HASH = os.environ.get("API_HASH", "your_api_hash")
 SOURCE_CHAT = os.environ.get("SOURCE_CHAT", "@SourceChannelUsername")
 TARGET_CHAT = os.environ.get("TARGET_CHAT", "@YourTargetChannelUsername")
 
-# إنشاء جلسة العميل
-app = Client("my_userbot", api_id=API_ID, api_hash=API_HASH)
+# إنشاء حلقة الحدث يدوياً لحل مشكلة بايثون الحديثة
+loop = asyncio.new_event_loop()
+asyncio.set_event_loop(loop)
+
+app = Client(
+    "my_userbot",
+    api_id=API_ID,
+    api_hash=API_HASH,
+    loop=loop
+)
 
 @app.on_message(filters.chat(SOURCE_CHAT))
 async def forward_messages(client: Client, message: Message):
@@ -20,7 +28,6 @@ async def forward_messages(client: Client, message: Message):
     except Exception as g:
         print(f"خطأ: {g}")
 
-# خادم ويب وهمي لكي يرضى موقع Render عن الـ Web Service ويتركها تعمل
 async def handle(request):
     return web.Response(text="Bot is running!")
 
@@ -34,8 +41,6 @@ async def web_server():
     await site.start()
 
 if __name__ == "__main__":
-    import asyncio
-    loop = asyncio.get_event_loop()
-    loop.create_task(web_server())
+    loop.run_until_complete(web_server())
     print("السكربت وخادم الويب يعملان معاً...")
     app.run()
