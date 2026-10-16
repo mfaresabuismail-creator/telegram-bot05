@@ -1,7 +1,7 @@
 import os
-from pyrogram import Client, filters
-from pyrogram.types import Message
+import asyncio
 from aiohttp import web
+from pyrogram import Client, filters
 
 API_ID = int(os.environ.get("API_ID", "1234567"))
 API_HASH = os.environ.get("API_HASH", "your_api_hash")
@@ -11,20 +11,18 @@ TARGET_CHAT = os.environ.get("TARGET_CHAT", "@YourTargetChannelUsername")
 app = Client("my_userbot", api_id=API_ID, api_hash=API_HASH)
 
 @app.on_message(filters.chat(SOURCE_CHAT))
-async def forward_messages(client: Client, message: Message):
+async def forward_messages(client, message):
     try:
         await message.copy(chat_id=TARGET_CHAT)
-        print(f"تم نسخ الرسالة رقم {message.id} بنجاح.")
-    except Exception as g:
-        print(f"خطأ: {g}")
+        print(f"تم نسخ الرسالة بنجاح.")
+    except Exception as e:
+        print(f"خطأ: {e}")
 
 async def handle(request):
     return web.Response(text="Bot is running!")
 
 async def main():
-    app.start()
-    print("تم تشغيل البوت بنجاح!")
-    
+    # بدء تشغيل خادم الويب
     server = web.Application()
     server.add_routes([web.get("/", handle)])
     runner = web.AppRunner(server)
@@ -33,11 +31,13 @@ async def main():
     site = web.TCPSite(runner, "0.0.0.0", port)
     await site.start()
     
-    # ابقاء السيرفر والبوت مفتوحين
-    import asyncio
+    # بدء تشغيل بوت تيليجرام
+    await app.start()
+    print("البوت يعمل الآن بنجاح مع سيرفر الويب!")
+    
+    # إبقاء التشغيل مستمراً
     while True:
         await asyncio.sleep(3600)
 
 if __name__ == "__main__":
-    import asyncio
     asyncio.run(main())
