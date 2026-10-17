@@ -12,40 +12,46 @@ TARGET_CHAT = "@GazaNews_Live"
 
 app = Client("my_userbot", api_id=API_ID, api_hash=API_HASH, session_string=SESSION_STRING)
 
-# متغيّر لتخزين معرّف آخر رسالة تم نقلها
 last_copied_id = 0
 
 async def check_new_messages():
     global last_copied_id
     
-    # جلب آخر رسالة نُشرت بالقناة عند تشغيل البوت لأول مرة
+    # الحصول على رقم آخر رسالة عند بدء التشغيل
     try:
         async for msg in app.get_chat_history(SOURCE_CHAT, limit=1):
             last_copied_id = msg.id
-            print(f"تم بدء المراقبة، آخر رسالة حالية هي رقم: {last_copied_id}")
+            print(f"تم بدء المراقبة بنجاح، رقم آخر رسالة: {last_copied_id}")
     except Exception as e:
-        print(f"خطأ في الوصول إلى القناة المصدر: {e}")
+        print(f"خطأ عند قراءة سجل القناة: {e}")
 
     while True:
         try:
             await asyncio.sleep(10)  # الفحص كل 10 ثوانٍ
             
-            # جلب الرسائل الجديدة التي صدرت بعد آخر رسالة تم حفظها
+            # جلب الرسائل الجديدة
+            messages_to_copy = []
             async for message in app.get_chat_history(SOURCE_CHAT, limit=5):
                 if message.id > last_copied_id:
-                    print(f"تم العثور على رسالة جديدة ID: {message.id}، جاري نقلها...")
-                    await message.copy(chat_id=TARGET_CHAT)
-                    last_copied_id = message.id
-                    print("تم النقل بنجاح!")
-                    
+                    messages_to_copy.append(message)
+            
+            # ترتيب الرسائل من القديم للحديث لنقلها بالترتيب الصحيح
+            messages_to_copy.reverse()
+            
+            for message in messages_to_copy:
+                print(f"جاري نقل الرسالة رقم: {message.id}")
+                await message.copy(chat_id=TARGET_CHAT)
+                last_copied_id = message.id
+                print("تم نقل الرسالة بنجاح!")
+                
         except Exception as e:
-            print(f"خطأ أثناء الفحص الدوري: {e}")
+            print(f"خطأ أثناء الفحص: {e}")
 
 async def handle(request):
-    return web.Response(text="Bot is Live and Running!")
+    return web.Response(text="Bot is Live!")
 
-async def main():
-    # تشغيل سيرفر الويب لمنع Render من النوم
+async def start_services():
+    # 1. تشغيل سيرفر الويب
     server = web.Application()
     server.add_routes([web.get("/", handle)])
     runner = web.AppRunner(server)
@@ -53,16 +59,16 @@ async def main():
     port = int(os.environ.get("PORT", 8080))
     site = web.TCPSite(runner, "0.0.0.0", port)
     await site.start()
+    print("سيرفر الويب يعمل بنجاح!")
 
-    # تشغيل التليجرام والمراقبة
+    # 2. تشغيل التليجرام
     await app.start()
-    print("البوت يعمل الآن بنظام الفحص الدوري للأعضاء العاديين!")
+    print("تم الاتصال بحساب التليجرام!")
     
-    # بدء عملية التفقّد المستمر
+    # 3. تشغيل عملية المراقبة الدورية
     asyncio.create_task(check_new_messages())
 
-    while True:
-        await asyncio.sleep(3600)
-
 if __name__ == "__main__":
-    asyncio.run(main())
+    loop = asyncio.get_event_loop()
+    loop.run_until_complete(start_services())
+    loop.run_forever()
