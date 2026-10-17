@@ -13,12 +13,10 @@ TARGET_CHAT = "@GazaNews_Live"
 app = Client("my_userbot", api_id=API_ID, api_hash=API_HASH, session_string=SESSION_STRING)
 
 async def monitor_channels():
-    # الانتظار قليلاً حتى يتم اتصال البوت بالكامل
     await asyncio.sleep(5)
     
     last_msg_id = 0
     try:
-        # محاولة جلب آخر رسالة لتثبيت نقطة البداية
         async for message in app.get_chat_history(SOURCE_CHAT, limit=1):
             last_msg_id = message.id
             print(f"تم بنجاح الاتصال بقناة المصدر. آخر رسالة مسجلة ID: {last_msg_id}")
@@ -28,12 +26,11 @@ async def monitor_channels():
 
     while True:
         try:
-            await asyncio.sleep(10)  # الفحص كل 10 ثوانٍ
+            await asyncio.sleep(10)
             
-            # جلب آخر الرسائل وفحصها
             async for message in app.get_chat_history(SOURCE_CHAT, limit=3):
                 if message.id > last_msg_id:
-                    print(发现 رسالة جديدة برقم ID: {message.id}، جاري نسخها...")
+                    print(f"تم العثور على رسالة جديدة برقم ID: {message.id}، جاري نسخها...")
                     await message.copy(chat_id=TARGET_CHAT)
                     last_msg_id = message.id
                     print("تم نسخ ونشر الرسالة بنجاح تام!")
@@ -45,7 +42,6 @@ async def handle(request):
     return web.Response(text="Bot is Live and Running!")
 
 async def main():
-    # تشغيل سيرفر الويب لمنع النوم على Render
     server = web.Application()
     server.add_routes([web.get("/", handle)])
     runner = web.AppRunner(server)
@@ -54,7 +50,6 @@ async def main():
     site = web.TCPSite(runner, "0.0.0.0", port)
     await site.start()
 
-    # تشغيل البوت وبدء المراقبة
     await app.start()
     print("تم تشغيل البوت وحساب المستخدم بنجاح، وبدأت مراقبة القنوات...")
     
