@@ -2,15 +2,29 @@ import os
 import time
 import requests
 import xml.etree.ElementTree as ET
+from http.server import HTTPServer, BaseHTTPRequestHandler
+import threading
 
-# --- جلب البيانات من متغيرات البيئة تلقائياً ---
-BOT_TOKEN = os.getenv("BOT_TOKEN", "ضع_التوكن_هنا_إذا_لم_تستخدم_متغيرات_البيئة")
+# --- خادم ويب وهمي لإرضاء منصة Render والبقاء في الخطة المجانية ---
+class SimpleHandler(BaseHTTPRequestHandler):
+    def do_GET(self):
+        self.send_response(200)
+        self.end_headers()
+        self.wfile.write(b"Bot is active and running!")
+
+def run_server():
+    port = int(os.getenv("PORT", "10000"))
+    server = HTTPServer(('0.0.0.0', port), SimpleHandler)
+    server.serve_forever()
+
+# --- إعدادات البوت والقنوات ---
+BOT_TOKEN = os.getenv("BOT_TOKEN")
 SOURCE_CHANNEL = os.getenv("SOURCE_CHANNEL", "test_test373").replace("@", "").strip()
 TARGET_CHANNEL = os.getenv("TARGET_CHANNEL", "@hakar_ae").strip()
 CHECK_INTERVAL = int(os.getenv("CHECK_INTERVAL", "30"))
 
 def get_latest_posts():
-    """جلب أحدث الرسائل من أي قناة مصدر عامة عبر تغذية RSS"""
+    """جلب أحدث الرسائل من القناة العامة عبر RSS"""
     url = f"https://rsshub.app/telegram/channel/{SOURCE_CHANNEL}"
     try:
         response = requests.get(url, timeout=10)
@@ -25,11 +39,11 @@ def get_latest_posts():
                 posts.append({"guid": guid, "text": description or title})
             return posts
     except Exception as e:
-        print(f"خطأ أثناء جلب الرسائل من القناة المصدر: {e}")
+        print(f"خطأ أثناء جلب الرسائل: {e}")
     return []
 
 def send_telegram_message(text):
-    """إرسال الرسائل إلى أي قناة مستهدفة محددة"""
+    """إرسال الرسالة إلى القناة المستهدفة"""
     url = f"https://api.telegram.org/bot{BOT_TOKEN}/sendMessage"
     payload = {
         "chat_id": TARGET_CHANNEL,
@@ -37,15 +51,13 @@ def send_telegram_message(text):
         "parse_mode": "HTML"
     }
     try:
-        response = requests.post(url, json=payload, timeout=10)
-        if response.status_code != 200:
-            print(f"فشل الإرسال: {response.text}")
+        requests.post(url, json=payload, timeout=10)
     except Exception as e:
-        print(f"خطأ أثناء إرسال الرسالة: {e}")
+        print(f"خطأ أثناء الإرسال: {e}")
 
-def main():
+def main_bot():
     last_sent_id = None
-    print(f"بدأ البوت بمراقبة القناة المصدر (@{SOURCE_CHANNEL}) والتوجيه إلى ({TARGET_CHANNEL})...")
+    print(f"بدأ البوت بمراقبة القناة (@{SOURCE_CHANNEL}) وتحويل الرسائل مجاناً...")
     
     while True:
         posts = get_latest_posts()
@@ -65,4 +77,10 @@ def main():
         time.sleep(CHECK_INTERVAL)
 
 if __name__ == "__main__":
-    main()
+    # تشغيل سيرفر الويب الوهمي في الخلفية لفتح المنفذ المطلوب مجاناً
+    server_thread = threading.Thread(target=run_server)
+    server_thread.daemon = True
+    server_thread.start()
+    
+    # تشغيل نظام مراقبة البوت
+    main_bot()
