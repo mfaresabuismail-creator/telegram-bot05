@@ -7,62 +7,55 @@ API_ID = int(os.environ.get("API_ID", "39045345"))
 API_HASH = os.environ.get("API_HASH", "7a9774c50c785dd4fb46ac6afe3ficc0")
 SESSION_STRING = os.environ.get("SESSION_STRING")
 
-# القنوات الجديدة المحددة
-SOURCE_CHAT = "@test_test373"
-TARGET_CHAT = "@hakar_ae"
+SOURCE_CHAT = "test_test373"
+TARGET_CHAT = "hakar_ae"
 
 app = Client("my_userbot", api_id=API_ID, api_hash=API_HASH, session_string=SESSION_STRING)
 
 async def monitor_channels():
-    print("جاري تهيئة الاتصال بالقنوات وتخزين الذاكرة المؤقتة...")
+    print("--- بدأ تشغيل خدمة المراقبة ---")
     await asyncio.sleep(5)
     
-    # 1. محاولة الانضمام التلقائي أو جلب معلومات القناة لحل مشكلة الصلاحيات والذاكرة المؤقتة
     try:
-        source_peer = await app.get_chat(SOURCE_CHAT)
-        print(f"تم التعرف على قناة المصدر بنجاح: {source_peer.title} (ID: {source_peer.id})")
+        # جلب الكيان البرمجي للقنوات لضمان استقرار الجلسة
+        source_chat = await app.get_chat(SOURCE_CHAT)
+        target_chat = await app.get_chat(TARGET_CHAT)
+        print(f"تم ربط المصدر: {source_chat.title} والهدف: {target_chat.title}")
     except Exception as e:
-        print(f"خطأ في التعرف على قناة المصدر (تأكد من وجود الحساب فيها): {e}")
-
-    try:
-        target_peer = await app.get_chat(TARGET_CHAT)
-        print(f"تم التعرف على قناة الهدف بنجاح: {target_peer.title} (ID: {target_peer.id})")
-    except Exception as e:
-        print(f"خطأ في التعرف على قناة الهدف: {e}")
+        print(f"خطأ في ربط القنوات: {e}")
 
     last_msg_id = 0
     
-    # 2. تحديد آخر رسالة حالية لبدء المراقبة منها
+    # التقاط أحدث رسالة حالية
     try:
         async for message in app.get_chat_history(SOURCE_CHAT, limit=1):
             last_msg_id = message.id
-            print(f"آخر رسالة مسجلة حالياً في المصدر برقم ID: {last_msg_id}")
+            print(f"آخر معرف رسالة تم تسجيله في البداية هو: {last_msg_id}")
             break
     except Exception as e:
-        print(f"تعذر جلب السجل الأولي للرسائل: {e}")
+        print(f"تعذر قراءة السجل الأولي: {e}")
 
-    # 3. حلقة المراقبة المستمرة بالفحص الدوري
     while True:
         try:
-            await asyncio.sleep(10)  # الفحص كل 10 ثوانٍ
+            await asyncio.sleep(8)  # الفحص كل 8 ثوانٍ
             
-            async for message in app.get_chat_history(SOURCE_CHAT, limit=3):
+            # جلب آخر 5 رسائل للتحقق منها
+            async for message in app.get_chat_history(SOURCE_CHAT, limit=5):
                 if message.id > last_msg_id:
-                    print(f"تم رصد رسالة جديدة برقم ID: {message.id}، جاري نقلها إلى {TARGET_CHAT}...")
+                    print(f"وجدنا رسالة جديدة! الرقم: {message.id}")
                     
-                    # محاولة النسخ مع طباعة النتيجة بدقة
+                    # نسخ الرسالة إلى القناة الهدف
                     await message.copy(chat_id=TARGET_CHAT)
                     last_msg_id = message.id
-                    print("تم نقل ونشر الرسالة بنجاح تام!")
+                    print("تم النسخ والنشر بنجاح تام!")
                     
         except Exception as e:
-            print(f"خطأ أثناء حلقة الفحص والدوري: {e}")
+            print(f"خطأ أثناء حلقة الفحص: {e}")
 
 async def handle(request):
     return web.Response(text="Bot is Live and Running!")
 
 async def main():
-    # تشغيل سيرفر الويب لمنع النوم على Render
     server = web.Application()
     server.add_routes([web.get("/", handle)])
     runner = web.AppRunner(server)
@@ -71,9 +64,8 @@ async def main():
     site = web.TCPSite(runner, "0.0.0.0", port)
     await site.start()
 
-    # تشغيل جلسة البوت
     await app.start()
-    print("تم تشغيل البوت بنجاح تام وبدأت فحص القنوات...")
+    print("تم بدء جلسة البوت بنجاح تام.")
     
     asyncio.create_task(monitor_channels())
 
