@@ -8,13 +8,13 @@ API_ID = int(os.environ.get("API_ID", "39045345"))
 API_HASH = os.environ.get("API_HASH", "7a9774c50c785dd4fb46ac6afe3ficc0")
 SESSION_STRING = os.environ.get("SESSION_STRING")
 
-# خريطة القنوات المحددة
+# خريطة القنوات (قناة المصدر: قناة الهدف)
 CHANNELS_MAP = {
-    "@hpress": "@GazaNews_Live",
-    "@malek_eldahab": "@malak_eldahab", # يمكنك إبقاء أو إزالة هذه القناة حسب رغبتك
+    "hpress": "GazaNews_Live",
+    "malek_eldahab": "malak_eldahab",
 }
 
-# قائمة الاستبدالات المخصصة للروابط
+# استبدال الروابط
 LINK_REPLACEMENTS = {
     "https://t.me/hpress": "https://t.me/GazaNews_Live",
     "http://t.me/hpress": "https://t.me/GazaNews_Live",
@@ -22,37 +22,43 @@ LINK_REPLACEMENTS = {
 
 app = Client("my_userbot", api_id=API_ID, api_hash=API_HASH, session_string=SESSION_STRING)
 
-@app.on_message(filters.chat(list(CHANNELS_MAP.keys())))
+@app.on_message(filters.channel)
 async def forward_messages(client, message):
     try:
+        # الحصول على معرف القناة الحالية بدون علامة @
+        chat_username = message.chat.username
+        if not chat_username:
+            return
+
         target_chat = None
         for src, tgt in CHANNELS_MAP.items():
-            if message.chat.username and src.lower() == f"@{message.chat.username.lower()}":
-                target_chat = tgt
+            if chat_username.lower() == src.lower():
+                target_chat = f"@{tgt}"
                 break
-        
+
         if target_chat:
-            # الحصول على نص الرسالة أو التعليق المرفق مع الوسائط
+            print(f"وصلت رسالة جديدة من @{chat_username}، جاري التوجيه إلى {target_chat}...")
+            
+            # استخراج النص أو التعليق
             text = message.text or message.caption
             
             if text:
-                # استبدال رابط المصدر برابط قناتك الهدف
+                # استبدال الروابط
                 updated_text = text
                 for old_link, new_link in LINK_REPLACEMENTS.items():
                     updated_text = re.sub(re.escape(old_link), new_link, updated_text, flags=re.IGNORECASE)
                 
-                # إرسال الرسالة مع النص المحدث
                 if message.media:
                     await message.copy(chat_id=target_chat, caption=updated_text)
                 else:
                     await client.send_message(chat_id=target_chat, text=updated_text)
             else:
-                # إذا كانت الرسالة عبارة عن وسائط بدون نص
                 await message.copy(chat_id=target_chat)
                 
-            print(f"تم نسخ الرسالة واستبدال الرابط بنجاح إلى {target_chat}")
+            print(f" تم نقل الرسالة بنجاح إلى {target_chat}")
+            
     except Exception as e:
-        print(f"خطأ أثناء معالجة الرسالة: {e}")
+        print(f" خطأ أثناء التوجيه: {e}")
 
 async def handle(request):
     return web.Response(text="Bot is running!")
@@ -67,7 +73,7 @@ async def main():
     await site.start()
     
     await app.start()
-    print("البوت يعمل الآن ويقوم باستبدال الروابط المحددة تلقائياً!")
+    print(" البوت يعمل ويراقب القنوات الآن...")
     
     while True:
         await asyncio.sleep(3600)
