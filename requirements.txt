@@ -1,2 +1,2 @@
-telethon
+Telethon==1.42.0
 requests
