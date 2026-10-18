@@ -55,4 +55,7 @@ async def forward_handler(event):
                 break
 
         if target:
-            # تجهيز النص واستبدال
+            # تجهيز النص واستبدال اليوزر المطلوب إن وجد
+            text = event.message.text or ''
+            if text:
+                
