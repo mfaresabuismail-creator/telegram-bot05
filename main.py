@@ -37,8 +37,9 @@ async def forward_handler(event):
                 break
 
         if target:
+            # توجيه الرسالة بنجاح
             await client.forward_messages(target, event.message)
-            print(f"تم توجيه رسالة بنجاح إلى الهدف: {target}")
+            print(f"تم توجيه رسالة بنجاح من المصدر إلى الهدف: {target}")
     except Exception as e:
         print(f"حدث خطأ أثناء التوجيه: {e}")
 
@@ -46,15 +47,21 @@ async def main():
     await client.start()
     print("تم الاتصال بتيليجرام بنجاح عبر StringSession!")
     
-    # ربط جميع القنوات الأربع وتحديث كاش الكيانات
-    for src in CHANNEL_MAPPING.keys():
+    # الحل الجذري: جلب كيانات المصادر والأهداف معاً عند البداية لتخزينها في الكاش
+    for src, tgt in CHANNEL_MAPPING.items():
         try:
-            entity = await client.get_entity(src)
-            print(f"تم ربط القناة بنجاح: {src} (ID: {entity.id})")
+            src_entity = await client.get_entity(src)
+            print(f"تم ربط القناة المصدر بنجاح: {src} (ID: {src_entity.id})")
         except Exception as e:
-            print(f"تنبيه: لم يتم جلب الكيان للقناة {src}: {e}")
+            print(f"تنبيه للمصدر {src}: {e}")
+            
+        try:
+            tgt_entity = await client.get_entity(tgt)
+            print(f"تم ربط القناة الهدف بنجاح: {tgt} (ID: {tgt_entity.id})")
+        except Exception as e:
+            print(f"تنبيه للهدف {tgt}: {e}")
         
-    print("البوت يعمل الآن وجاهز لمراقبة كافة القنوات 24/7...")
+    print("البوت يعمل الآن وجاهز تماماً لمراقبة وتوجيه المنشورات 24/7...")
     await client.run_until_disconnected()
 
 if __name__ == '__main__':
