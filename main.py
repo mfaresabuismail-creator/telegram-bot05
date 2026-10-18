@@ -10,12 +10,12 @@ api_hash = 'c4692d3c5a30332fc359ecb2a61604fe'
 # قراءة نص الجلسة من متغير البيئة SESSION_STRING في Render
 string_session = os.environ.get('SESSION_STRING', '')
 
-# خريطة توجيه القنوات (المصدر -> الهدف)
+# خريطة توجيه القنوات المعدلة (المصدر -> الهدف)
 CHANNEL_MAPPING = {
     'test_test373': '@hokoz_os',
     'malek_eldahab': '@malak_eldahab',
     'hpress': '@GazaNews_Live',
-    'stqdson': '@Applicants039'
+    'Mtqdmon': '@Applicants039'  # تم تصحيح اسم القناة المصدر هنا
 }
 
 client = TelegramClient(StringSession(string_session), api_id, api_hash)
@@ -46,15 +46,15 @@ async def main():
     await client.start()
     print("تم الاتصال بتيليجرام بنجاح عبر StringSession!")
     
-    # محاولة جلب القنوات للتأكد من تسجيلها في الكاش دون إيقاف التشغيل لو حدث خطأ
+    # ربط جميع القنوات الأربع وتحديث كاش الكيانات
     for src in CHANNEL_MAPPING.keys():
         try:
             entity = await client.get_entity(src)
             print(f"تم ربط القناة بنجاح: {src} (ID: {entity.id})")
         except Exception as e:
-            print(f"تنبيه: لم يتم جلب الكيان للقناة {src} تلقائياً، سيتم التعرف عليها عند وصول أول رسالة.")
+            print(f"تنبيه: لم يتم جلب الكيان للقناة {src}: {e}")
         
-    print("البوت يعمل الآن وجاهز لمراقبة المنشورات 24/7...")
+    print("البوت يعمل الآن وجاهز لمراقبة كافة القنوات 24/7...")
     await client.run_until_disconnected()
 
 if __name__ == '__main__':
