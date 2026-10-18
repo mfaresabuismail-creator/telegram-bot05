@@ -55,31 +55,4 @@ async def forward_handler(event):
                 break
 
         if target:
-            # تجهيز النص واستبدال اليوزر المطلوب إن وجد
-            text = event.message.text or ''
-            if text:
-                text = text.replace('@el_malek001', '@Gold_055')
-
-            # نشر الرسالة في الهدف بدون مصدر وبالمحتوى المحدث
-            if event.message.media:
-                await client.send_file(target, event.message.media, caption=text)
-            elif text:
-                await client.send_message(target, text)
-                
-            print(f"تم إرسال ونشر الرسالة الجديدة في الهدف بدون مصدر: {target}")
-    except Exception as e:
-        print(f"حدث خطأ أثناء الإرسال: {e}")
-
-async def main():
-    await client.start()
-    print("تم الاتصال بتيليجرام بنجاح!")
-    
-    # ربط القنوات للتخزين المؤقت في الكاش وتجنب أخطاء المعرفات
-    for src, tgt in CHANNEL_MAPPING.items():
-        try:
-            await client.get_entity(src)
-        except Exception:
-            pass
-        try:
-            await client.get_entity(tgt)
-        except Exception
+            # تجهيز النص واستبدال
