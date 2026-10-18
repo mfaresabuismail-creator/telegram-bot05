@@ -11,7 +11,6 @@ api_hash = 'c4692d3c5a30332fc359ecb2a61604fe'
 string_session = os.environ.get('SESSION_STRING', '')
 
 # خريطة توجيه القنوات (المصدر -> الهدف)
-# يفضل استخدام معرفات الأرقام للمصدر إن أمكن، أو أسمائها الدقيقة
 CHANNEL_MAPPING = {
     'test_test373': '@hokoz_os',
     'malek_eldahab': '@malak_eldahab',
@@ -24,7 +23,6 @@ client = TelegramClient(StringSession(string_session), api_id, api_hash)
 @client.on(events.NewMessage)
 async def forward_handler(event):
     try:
-        # التأكد من أن الرسالة قادمة من قناة/مجموعة
         if not event.is_channel and not event.is_group:
             return
             
@@ -34,14 +32,13 @@ async def forward_handler(event):
         
         target = None
         for src, tgt in CHANNEL_MAPPING.items():
-            # مقارنة الاسم أو الـ ID لضمان المطابقة الدقيقة
             if src.lower() in source_username.lower() or src in source_id:
                 target = tgt
                 break
 
         if target:
             await client.forward_messages(target, event.message)
-            print(f"تم توجيه رسالة من المصدر إلى {target} بنجاح!")
+            print(f"تم توجيه رسالة بنجاح إلى الهدف: {target}")
     except Exception as e:
         print(f"حدث خطأ أثناء التوجيه: {e}")
 
@@ -49,15 +46,15 @@ async def main():
     await client.start()
     print("تم الاتصال بتيليجرام بنجاح عبر StringSession!")
     
-    # جلب الكاش لكل القنوات المصدر لضمان ربطها بالحساب وعدم ظهور خطأ عدم الارتباط
+    # محاولة جلب القنوات للتأكد من تسجيلها في الكاش دون إيقاف التشغيل لو حدث خطأ
     for src in CHANNEL_MAPPING.keys():
         try:
-            entity = await client.get_entity(src if src.startswith('@') or src.startswith('-') else src)
-            print(f"تم ربط القناة المصدر بنجاح: {src} (ID: {entity.id})")
+            entity = await client.get_entity(src)
+            print(f"تم ربط القناة بنجاح: {src} (ID: {entity.id})")
         except Exception as e:
-            print(f"تنبيه: لم يتم العثور على الكيان للقناة {src}: {e}")
+            print(f"تنبيه: لم يتم جلب الكيان للقناة {src} تلقائياً، سيتم التعرف عليها عند وصول أول رسالة.")
         
-    print("البوت جاهز تماماً لمراقبة المنشورات الجديدة...")
+    print("البوت يعمل الآن وجاهز لمراقبة المنشورات 24/7...")
     await client.run_until_disconnected()
 
 if __name__ == '__main__':
