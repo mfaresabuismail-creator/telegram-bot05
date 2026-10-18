@@ -10,12 +10,12 @@ api_hash = 'c4692d3c5a30332fc359ecb2a61604fe'
 # قراءة نص الجلسة من متغير البيئة SESSION_STRING في Render
 string_session = os.environ.get('SESSION_STRING', '')
 
-# خريطة توجيه القنوات المعدلة (المصدر -> الهدف)
+# خريطة توجيه القنوات (المصدر -> الهدف الصحيح)
 CHANNEL_MAPPING = {
-    'test_test373': '@hokoz_os',
+    'test_test373': '@hakar_ae',       # تم تعديل الهدف هنا بنجاح
     'malek_eldahab': '@malak_eldahab',
     'hpress': '@GazaNews_Live',
-    'Mtqdmon': '@Applicants039'  # تم تصحيح اسم القناة المصدر هنا
+    'Mtqdmon': '@Applicants039'
 }
 
 client = TelegramClient(StringSession(string_session), api_id, api_hash)
@@ -37,7 +37,7 @@ async def forward_handler(event):
                 break
 
         if target:
-            # توجيه الرسالة بنجاح
+            # توجيه الرسالة بجميع محتوياتها وصيغها
             await client.forward_messages(target, event.message)
             print(f"تم توجيه رسالة بنجاح من المصدر إلى الهدف: {target}")
     except Exception as e:
@@ -47,7 +47,7 @@ async def main():
     await client.start()
     print("تم الاتصال بتيليجرام بنجاح عبر StringSession!")
     
-    # الحل الجذري: جلب كيانات المصادر والأهداف معاً عند البداية لتخزينها في الكاش
+    # ربط جميع القنوات المصدر والهدف لتخزينها في الكاش وتجنب أي أخطاء
     for src, tgt in CHANNEL_MAPPING.items():
         try:
             src_entity = await client.get_entity(src)
