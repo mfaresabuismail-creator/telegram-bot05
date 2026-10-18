@@ -58,4 +58,34 @@ async def forward_handler(event):
             # تجهيز النص واستبدال اليوزر المطلوب إن وجد
             text = event.message.text or ''
             if text:
+                text = text.replace('@el_malek001', '@Gold_055')
+
+            # نشر الرسالة في الهدف بدون مصدر وبالمحتوى المحدث
+            if event.message.media:
+                await client.send_file(target, event.message.media, caption=text)
+            elif text:
+                await client.send_message(target, text)
                 
+            print(f"تم إرسال ونشر الرسالة في الهدف بدون مصدر مع تعديل المعرفات: {target}")
+    except Exception as e:
+        print(f"حدث خطأ أثناء الإرسال: {e}")
+
+async def main():
+    await client.start()
+    print("تم الاتصال بتيليجرام بنجاح وتحديث قاعدة استبدال المعرفات!")
+    
+    for src, tgt in CHANNEL_MAPPING.items():
+        try:
+            await client.get_entity(src)
+        except Exception:
+            pass
+        try:
+            await client.get_entity(tgt)
+        except Exception:
+            pass
+        
+    print("البوت يعمل الآن وجاهز لنشر وتعديل الرسائل 24/7...")
+    await client.run_until_disconnected()
+
+if __name__ == '__main__':
+    asyncio.run(main())
