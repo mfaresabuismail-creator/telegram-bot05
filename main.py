@@ -1,22 +1,28 @@
 import os
 import asyncio
 import logging
+from threading import Thread
+from http.server import BaseHTTPRequestHandler, HTTPServer
 
 from telethon import TelegramClient, events
 from telethon.sessions import StringSession
 from telethon.errors import FloodWaitError
 
-# إعداد السجلات
+# ---------------- إعداد السجلات ----------------
+
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s | %(levelname)s | %(message)s"
 )
 
+# ---------------- إعدادات البيئة ----------------
+
 API_ID = int(os.environ["API_ID"])
 API_HASH = os.environ["API_HASH"]
 SESSION_STRING = os.environ["SESSION_STRING"].strip()
 
-# قراءة أزواج القنوات من إعدادات Render
+PORT = int(os.environ.get("PORT", "10000"))
+
 CHANNEL_PAIRS = []
 
 for i in range(4):
@@ -29,10 +35,38 @@ for i in range(4):
         CHANNEL_PAIRS.append((source, target))
 
 if not SESSION_STRING:
-    raise RuntimeError("متغير SESSION_STRING غير موجود")
+    raise RuntimeError("SESSION_STRING غير موجود")
 
 if not CHANNEL_PAIRS:
-    raise RuntimeError("لم يتم إعداد أزواج القنوات في Render")
+    raise RuntimeError("لم يتم إعداد أزواج القنوات")
+
+
+# ---------------- خادم HTTP ----------------
+
+class HealthHandler(BaseHTTPRequestHandler):
+    def do_GET(self):
+        if self.path in ("/", "/health"):
+            body = b"Telegram sync service is running"
+            self.send_response(200)
+            self.send_header("Content-Type", "text/plain; charset=utf-8")
+            self.send_header("Content-Length", str(len(body)))
+            self.end_headers()
+            self.wfile.write(body)
+        else:
+            self.send_response(404)
+            self.end_headers()
+
+    def log_message(self, format, *args):
+        pass
+
+
+def start_web_server():
+    server = HTTPServer(("0.0.0.0", PORT), HealthHandler)
+    logging.info("HTTP health server listening on port %s", PORT)
+    server.serve_forever()
+
+
+# ---------------- عميل تيليجرام ----------------
 
 client = TelegramClient(
     StringSession(SESSION_STRING),
@@ -44,7 +78,7 @@ TARGETS = {}
 
 
 async def copy_message(message, target):
-    """إرسال نص أو وسائط منشور جديد إلى قناة الوجهة."""
+    """نسخ رسالة جديدة نصية أو ذات وسائط فردية."""
 
     if message.media:
         await client.send_file(
@@ -53,7 +87,6 @@ async def copy_message(message, target):
             caption=message.message or "",
             formatting_entities=message.entities
         )
-
     elif message.message:
         await client.send_message(
             target,
@@ -65,10 +98,8 @@ async def copy_message(message, target):
 
 async def main():
     await client.start()
-
     logging.info("تم الاتصال بتيليجرام")
 
-    # تجهيز القنوات قبل بدء المراقبة
     source_ids = []
 
     for source_name, target_name in CHANNEL_PAIRS:
@@ -84,7 +115,6 @@ async def main():
             target_name
         )
 
-    # الاستماع للمنشورات الجديدة فقط
     @client.on(events.NewMessage(chats=source_ids))
     async def new_post(event):
         target = TARGETS.get(event.chat_id)
@@ -94,11 +124,7 @@ async def main():
 
         try:
             await copy_message(event.message, target)
-
-            logging.info(
-                "تم إرسال المنشور الجديد من القناة %s",
-                event.chat_id
-            )
+            logging.info("تم نقل منشور جديد من القناة %s", event.chat_id)
 
         except FloodWaitError as error:
             logging.warning(
@@ -111,9 +137,16 @@ async def main():
             logging.exception("فشل نقل المنشور")
 
     logging.info("البوت جاهز لمراقبة المنشورات الجديدة")
-
     await client.run_until_disconnected()
 
 
-if __name__ == "__main__":
+def run_telegram_client():
     asyncio.run(main())
+
+
+if __name__ == "__main__":
+    # تشغيل خادم HTTP في الخلفية
+    Thread(target=start_web_server, daemon=True).start()
+
+    # تشغيل متابعة تيليجرام
+    run_telegram_client()
