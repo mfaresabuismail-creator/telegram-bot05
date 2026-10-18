@@ -38,20 +38,6 @@ CHANNEL_MAPPING = {
 
 client = TelegramClient(StringSession(string_session), api_id, api_hash)
 
-async def process_and_send(message, target):
-    try:
-        text = message.text or ''
-        if text:
-            # استبدال اليوزر المطلوب فقط في قناة malek_eldahab أو عموماً حسب الرغبة
-            text = text.replace('@el_malek001', '@Gold_055')
-
-        if message.media:
-            await client.send_file(target, message.media, caption=text)
-        elif text:
-            await client.send_message(target, text)
-    except Exception as e:
-        print(f"خطأ أثناء إرسال الرسالة: {e}")
-
 @client.on(events.NewMessage)
 async def forward_handler(event):
     try:
@@ -69,30 +55,31 @@ async def forward_handler(event):
                 break
 
         if target:
-            await process_and_send(event.message, target)
-            print(f"تم إرسال ونشر الرسالة الجديدة في الهدف: {target}")
+            # تجهيز النص واستبدال اليوزر المطلوب إن وجد
+            text = event.message.text or ''
+            if text:
+                text = text.replace('@el_malek001', '@Gold_055')
+
+            # نشر الرسالة في الهدف بدون مصدر وبالمحتوى المحدث
+            if event.message.media:
+                await client.send_file(target, event.message.media, caption=text)
+            elif text:
+                await client.send_message(target, text)
+                
+            print(f"تم إرسال ونشر الرسالة الجديدة في الهدف بدون مصدر: {target}")
     except Exception as e:
-        print(f"حدث خطأ: {e}")
+        print(f"حدث خطأ أثناء الإرسال: {e}")
 
 async def main():
     await client.start()
     print("تم الاتصال بتيليجرام بنجاح!")
     
-    # جلب ونشر آخر 100 رسالة قديمة من كل قناة مصدر عند التشغيل لأول مرة
+    # ربط القنوات للتخزين المؤقت في الكاش وتجنب أخطاء المعرفات
     for src, tgt in CHANNEL_MAPPING.items():
         try:
-            print(f"جاري سحب آخر 100 رسالة من {src} إلى {tgt}...")
-            async for message in client.iter_messages(src, limit=100):
-                if message.text or message.media:
-                    await process_and_send(message, tgt)
-                    # فاصل زمني قصير لمنع الحظر من تيليجرام
-                    await asyncio.sleep(1)
-            print(f"تم الانتهاء من سحب الرسائل القديمة للقناة: {src}")
-        except Exception as e:
-            print(f"تنبيه أثناء سحب الرسائل القديمة لـ {src}: {e}")
-        
-    print("البوت يعمل الآن وجاهز لمراقبة الرسائل الجديدة 24/7...")
-    await client.run_until_disconnected()
-
-if __name__ == '__main__':
-    asyncio.run(main())
+            await client.get_entity(src)
+        except Exception:
+            pass
+        try:
+            await client.get_entity(tgt)
+        except Exception
