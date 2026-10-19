@@ -57,7 +57,13 @@ async def forward_handler(event):
         if target:
             text = event.message.text or ''
             
-            # شرط مخصص وحصري: استبدال اليوزر فقط إذا كانت القناة المصدر هي malek_eldahab والهدف malak_eldahab
+            # شرط منع إرسال الرسالة إذا كانت تحتوي على الرابط المخصص المذكور
+            forbidden_link = "https://signup.godocm.com?ptr=2000217935&rm=390&agr=2788"
+            if forbidden_link in text:
+                print("تم تخطي الرسالة لاحتوائها على رابط الإحالة المحدد ولم يتم إرسالها.")
+                return
+
+            # استبدال اليوزر حصرياً إذا كانت القناة المصدر هي malek_eldahab والهدف malak_eldahab
             if 'malek_eldahab' in source_username.lower() and target == '@malak_eldahab':
                 if text:
                     text = text.replace('@el_malek001', '@Gold_055')
@@ -85,7 +91,7 @@ async def main():
         except Exception:
             pass
         
-    print("البوت يعمل الآن وجاهز لمراقبة ونشر الرسائل الجديدة فوراً 24/7...")
+    print("البوت يعمل الآن وجاهز لمراقبة ونشر الرسائل مع تصفية الرابط المحدد 24/7...")
     await client.run_until_disconnected()
 
 if __name__ == '__main__':
