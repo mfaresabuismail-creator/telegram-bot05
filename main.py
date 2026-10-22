@@ -28,8 +28,9 @@ api_hash = 'c4692d3c5a30332fc359ecb2a61604fe'
 
 string_session = os.environ.get('SESSION_STRING', '')
 
-# خريطة توجيه القنوات (المصدر -> الهدف) مع إزالة test_test373
+# خريطة توجيه القنوات الجديدة والقديمة (المصدر -> الهدف)
 CHANNEL_MAPPING = {
+    'xauusdelostora1': '@Gold_trading04',
     'malek_eldahab': '@malak_eldahab',
     'hpress': '@GazaNews_Live',
     'Mtqdmon': '@Applicants039'
@@ -90,7 +91,7 @@ async def main():
         except Exception:
             pass
         
-    print("البوت يعمل الآن وجاهز لمراقبة ونشر الرسائل للقنوات المحددة فقط 24/7...")
+    print("البوت يعمل الآن وجاهز لمراقبة ونشر الرسائل للقنوات المحدثة 24/7...")
     await client.run_until_disconnected()
 
 if __name__ == '__main__':
