@@ -58,33 +58,32 @@ async def forward_handler(event):
         if target:
             text = event.message.text or ''
             
-            # 1. تصفية رابط الإحالة المخصص
+            # 1. تصفية رابط الإحالة المخصص وتخطي الرسالة
             forbidden_link = "https://signup.godocm.com?ptr=2000217935&rm=390&agr=2788"
             if forbidden_link in text:
                 print("تم تخطي الرسالة لاحتوائها على رابط الإحالة المحدد.")
                 return
 
-            # 2. معالجة الرسائل المتجهة لقناة Gold_trading04
-            if target == '@Gold_trading04':
+            # 2. استبدال أي يوزر بـ @Gold_055 تلقائياً في قنوات الهدف المستهدفة
+            if target in ['@Gold_trading04', '@malak_eldahab']:
                 if text:
-                    # استبدال أي يوزر بـ @Gold_055
                     text = re.sub(r'@[A-Za-z0-9_]+', '@Gold_055', text)
-                
-                # إضافة الهاشتاغات تلقائياً
+
+            # 3. إضافة الهاشتاغات تلقائياً لقناة Gold_trading04 فقط
+            if target == '@Gold_trading04':
                 hashtags = "\n\n#الذهب #xauusd"
                 text = (text + hashtags) if text else hashtags
 
-            # 3. إرسال المحتوى إلى القناة الهدف
+            # 4. إرسال المحتوى إلى القناة الهدف
             if event.message.media:
                 await client.send_file(target, event.message.media, caption=text)
             elif text:
                 await client.send_message(target, text)
                 
-            print(f"تم بنجاح نقل الرسالة إلى الهدف: {target}")
+            print(f"تم بنجاح نقل الرسالة إلى الهدف وتصفية اليوزرات: {target}")
     except Exception as e:
         print(f"حدث خطأ أثناء نقل الرسالة: {e}")
 
-# دالة دورية لإبقاء اتصال تيليجرام حياً 24/7
 async def keep_alive_ping():
     while True:
         await asyncio.sleep(60)
@@ -100,7 +99,6 @@ async def main():
             await client.start()
             print("تم الاتصال بتيليجرام بنجاح!")
             
-            # تحديث معرفات القنوات المباشرة
             for src, tgt in CHANNEL_MAPPING.items():
                 try:
                     await client.get_entity(src)
@@ -111,9 +109,8 @@ async def main():
                 except Exception:
                     pass
                 
-            print("البوت يعمل الآن ومستعد لنقل الرسائل 24/7...")
+            print("البوت يعمل الآن ومستعد لنقل الرسائل وتصفية اليوزرات 24/7...")
             
-            # تشغيل دالة إبقاء الاتصال حياً
             asyncio.create_task(keep_alive_ping())
             
             await client.run_until_disconnected()
