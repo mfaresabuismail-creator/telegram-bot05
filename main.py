@@ -1,6 +1,7 @@
 import os
 import asyncio
 import threading
+import re
 from http.server import HTTPServer, BaseHTTPRequestHandler
 from telethon import TelegramClient, events
 from telethon.sessions import StringSession
@@ -28,9 +29,9 @@ api_hash = 'c4692d3c5a30332fc359ecb2a61604fe'
 
 string_session = os.environ.get('SESSION_STRING', '')
 
-# خريطة توجيه القنوات الجديدة والقديمة (المصدر -> الهدف)
+# خريطة توجيه القنوات (المصدر -> الهدف)
 CHANNEL_MAPPING = {
-    'xauusdelostora1': '@Gold_trading04',
+    'amirgolder_01': '@Gold_trading04',
     'malek_eldahab': '@malak_eldahab',
     'hpress': '@GazaNews_Live',
     'Mtqdmon': '@Applicants039'
@@ -57,23 +58,28 @@ async def forward_handler(event):
         if target:
             text = event.message.text or ''
             
-            # شرط منع إرسال الرسالة إذا كانت تحتوي على الرابط المخصص المذكور
+            # شرط منع إرسال الرسالة إذا كانت تحتوي على رابط الإحالة المحدد
             forbidden_link = "https://signup.godocm.com?ptr=2000217935&rm=390&agr=2788"
             if forbidden_link in text:
                 print("تم تخطي الرسالة لاحتوائها على رابط الإحالة المحدد ولم يتم إرسالها.")
                 return
 
-            # استبدال اليوزر حصرياً إذا كانت القناة المصدر هي malek_eldahab والهدف malak_eldahab
-            if 'malek_eldahab' in source_username.lower() and target == '@malak_eldahab':
+            # الشروط الخاصة بقناة الهدف Gold_trading04
+            if target == '@Gold_trading04':
+                # 1. استبدال أي يوزر موجود في النص بيوزرك @Gold_055
                 if text:
-                    text = text.replace('@el_malek001', '@Gold_055')
+                    text = re.sub(r'@[A-Za-z0-9_]+', '@Gold_055', text)
+                
+                # 2. إضافة الهاشتاغات المحددة تلقائياً في نهاية البوست
+                hashtags = "\n\n#الذهب #xauusd"
+                text = (text + hashtags) if text else hashtags
 
             if event.message.media:
                 await client.send_file(target, event.message.media, caption=text)
             elif text:
                 await client.send_message(target, text)
                 
-            print(f"تم إرسال ونشر الرسالة في الهدف بنجاح: {target}")
+            print(f"تم إرسال ونشر الرسالة بالهاشتاغات المحدثة في الهدف بنجاح: {target}")
     except Exception as e:
         print(f"حدث خطأ أثناء الإرسال: {e}")
 
@@ -91,7 +97,7 @@ async def main():
         except Exception:
             pass
         
-    print("البوت يعمل الآن وجاهز لمراقبة ونشر الرسائل للقنوات المحدثة 24/7...")
+    print("البوت يعمل الآن وجاهز لنشر وتعديل الرسائل وإضافة الهاشتاغات تلقائياً 24/7...")
     await client.run_until_disconnected()
 
 if __name__ == '__main__':
