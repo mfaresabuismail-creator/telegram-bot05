@@ -6,7 +6,7 @@ from http.server import HTTPServer, BaseHTTPRequestHandler
 from telethon import TelegramClient, events
 from telethon.sessions import StringSession
 
-# 1. سيرفر الويب المصغر لضمان بقاء البوت يعمل 24/7 على Render
+# 1. سيرفر الويب المصغر لضمان استمرار عمل الاستضافة على Render
 class HealthCheckHandler(BaseHTTPRequestHandler):
     def do_GET(self):
         self.send_response(200)
@@ -46,7 +46,7 @@ async def forward_handler(event):
             return
             
         chat = await event.get_chat()
-        source_username = chat.username or ""
+        source_username = getattr(chat, 'username', '') or ''
         source_id = str(chat.id)
         
         target = None
@@ -58,47 +58,68 @@ async def forward_handler(event):
         if target:
             text = event.message.text or ''
             
-            # شرط منع إرسال الرسالة إذا كانت تحتوي على رابط الإحالة المحدد
+            # 1. تصفية رابط الإحالة المخصص
             forbidden_link = "https://signup.godocm.com?ptr=2000217935&rm=390&agr=2788"
             if forbidden_link in text:
-                print("تم تخطي الرسالة لاحتوائها على رابط الإحالة المحدد ولم يتم إرسالها.")
+                print("تم تخطي الرسالة لاحتوائها على رابط الإحالة المحدد.")
                 return
 
-            # الشروط الخاصة بقناة الهدف Gold_trading04
+            # 2. معالجة الرسائل المتجهة لقناة Gold_trading04
             if target == '@Gold_trading04':
-                # 1. استبدال أي يوزر موجود في النص بيوزرك @Gold_055
                 if text:
+                    # استبدال أي يوزر بـ @Gold_055
                     text = re.sub(r'@[A-Za-z0-9_]+', '@Gold_055', text)
                 
-                # 2. إضافة الهاشتاغات المحددة تلقائياً في نهاية البوست
+                # إضافة الهاشتاغات تلقائياً
                 hashtags = "\n\n#الذهب #xauusd"
                 text = (text + hashtags) if text else hashtags
 
+            # 3. إرسال المحتوى إلى القناة الهدف
             if event.message.media:
                 await client.send_file(target, event.message.media, caption=text)
             elif text:
                 await client.send_message(target, text)
                 
-            print(f"تم إرسال ونشر الرسالة بالهاشتاغات المحدثة في الهدف بنجاح: {target}")
+            print(f"تم بنجاح نقل الرسالة إلى الهدف: {target}")
     except Exception as e:
-        print(f"حدث خطأ أثناء الإرسال: {e}")
+        print(f"حدث خطأ أثناء نقل الرسالة: {e}")
+
+# دالة دورية لإبقاء اتصال تيليجرام حياً 24/7
+async def keep_alive_ping():
+    while True:
+        await asyncio.sleep(60)
+        try:
+            if client.is_connected():
+                await client.get_me()
+        except Exception:
+            pass
 
 async def main():
-    await client.start()
-    print("تم الاتصال بتيليجرام بنجاح!")
-    
-    for src, tgt in CHANNEL_MAPPING.items():
+    while True:
         try:
-            await client.get_entity(src)
-        except Exception:
-            pass
-        try:
-            await client.get_entity(tgt)
-        except Exception:
-            pass
-        
-    print("البوت يعمل الآن وجاهز لنشر وتعديل الرسائل وإضافة الهاشتاغات تلقائياً 24/7...")
-    await client.run_until_disconnected()
+            await client.start()
+            print("تم الاتصال بتيليجرام بنجاح!")
+            
+            # تحديث معرفات القنوات المباشرة
+            for src, tgt in CHANNEL_MAPPING.items():
+                try:
+                    await client.get_entity(src)
+                except Exception:
+                    pass
+                try:
+                    await client.get_entity(tgt)
+                except Exception:
+                    pass
+                
+            print("البوت يعمل الآن ومستعد لنقل الرسائل 24/7...")
+            
+            # تشغيل دالة إبقاء الاتصال حياً
+            asyncio.create_task(keep_alive_ping())
+            
+            await client.run_until_disconnected()
+        except Exception as e:
+            print(f"حدث انقطاع في الاتصال: {e}. إعادة المحاولة بعد 5 ثوانٍ...")
+            await asyncio.sleep(5)
 
 if __name__ == '__main__':
     asyncio.run(main())
