@@ -28,9 +28,9 @@ api_hash = 'c4692d3c5a30332fc359ecb2a61604fe'
 
 string_session = os.environ.get('SESSION_STRING', '')
 
-# خريطة توجيه القنوات المحدثة (المصدر -> الهدف)
+# خريطة توجيه القنوات المحدثة بدقة (المصدر -> الهدف)
 CHANNEL_MAPPING = {
-    'test_test373': 'Gold_trading04',  # التعديل الجديد للقناة المصدر والهدف
+    'test_test373': 'Gold_trading04',       # القناة المصدر الجديدة والهدف الجديد
     'malek_eldahab': '@malak_eldahab',
     'hpress': '@GazaNews_Live',
     'Mtqdmon': '@Applicants039'
@@ -57,9 +57,9 @@ async def forward_handler(event):
         if target:
             text = event.message.text or ''
             
-            # الشروط الخاصة فقط بقناة المصدر test_test373 والهدف Gold_trading04
+            # الشروط الخاصة بقناة المصدر test_test373 والهدف Gold_trading04
             if 'test_test373' in source_username.lower() or 'test_test373' in source_id:
-                # 1. منع إرسال الرسالة إذا احتوت على أي من الرابطين المحظورين
+                # 1. منع إرسال الرسالة إذا احتوت على أي من الرابطين الممنوعين
                 link1 = "https://web.mygtc.app/login/register?ref=JEwetYpP"
                 link2 = "https://one.justmarkets.link/a/ir7ce086xo"
                 if link1 in text or link2 in text:
@@ -70,7 +70,7 @@ async def forward_handler(event):
                 if text:
                     text = text.replace('@EL_OSTORA_1', '@Gold_055')
 
-            # القاعدة القديمة لقناة malek_eldahab إذا لزم الاحتفاظ بها
+            # الشروط الخاصة بقناة malek_eldahab
             if 'malek_eldahab' in source_username.lower() and target == '@malak_eldahab':
                 if text:
                     text = text.replace('@el_malek001', '@Gold_055')
@@ -98,7 +98,7 @@ async def main():
         except Exception:
             pass
         
-    print("البوت يعمل الآن وجاهز لمراقبة ونشر الرسائل وتطبيق الفلاتر الجديدة 24/7...")
+    print("البوت يعمل الآن وجاهز لمراقبة ونشر الرسائل بناءً على القنوات المحدثة 24/7...")
     await client.run_until_disconnected()
 
 if __name__ == '__main__':
